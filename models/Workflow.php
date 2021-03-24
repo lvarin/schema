@@ -600,8 +600,7 @@ class Workflow extends \yii\db\ActiveRecord
         $monitorCommand=implode(' ',$arguments);
         // print_r($monitorCommand);
         // exit(0);
-        shell_exec(sprintf('%s > /dev/null 2>&1 &', $monitorCommand));
-
+        shell_exec(sprintf('%s >%s 2>&1 &', $monitorCommand, $tmpFolder."/shell_exec.log"));
 
 
         return ['jobid'=>$jobid,'error'=>''];
