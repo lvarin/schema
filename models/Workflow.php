@@ -115,12 +115,12 @@ class Workflow extends \yii\db\ActiveRecord
             {
                 if ($field->field_type=='File')
                 {
-                    $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $field->value];
+                    $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $field->value];
                     $params[$field->name]=$value;
                 }
                 else if ($field->field_type=='Directory')
                 {
-                    $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $field->value];
+                    $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $field->value];
                     $params[$field->name]=$value;
                 }
                 else if ($field->field_type=='boolean')
@@ -144,7 +144,7 @@ class Workflow extends \yii\db\ActiveRecord
                     $finalArray=[];
                     foreach ($tmpArray as $val)
                     {
-                        $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $val];
+                        $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $val];
                         $finalArray[]=$value;
                     }
                     
@@ -155,7 +155,7 @@ class Workflow extends \yii\db\ActiveRecord
                     $finalArray=[];
                     foreach ($tmpArray as $val)
                     {
-                        $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $val];
+                        $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $val];
                         $finalArray[]=$value;
                     }
                     
