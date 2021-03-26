@@ -83,7 +83,7 @@ def getMainWorkflowFile(folder,allowed):
     # If no main workflow file was found, return an error code.
     if found==False:
         return False,14,{}
-    print('Main file: ' + mainFile)
+    print('Main file: %s ' % mainFile)
     return (mainFile,0,mainContent)
 
 

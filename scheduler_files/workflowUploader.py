@@ -96,8 +96,13 @@ else:
 print('Workfile: ' + workFile)
 workFile=workFile.replace(containerMount['local'],containerMount['wesContainer'])
 
-wuf.workflowStore(workName,workVersion,workFile,user,visibility,
+retCode=wuf.workflowStore(workName,workVersion,workFile,user,visibility,
                 description,biotools,doiFile,github_link,covid19,workflowPath,instructions)
+
+
+if retCode != 0:
+    print("ERROR: While updating the DB")
+    exit(retCode)
 
 if 'inputs' not in content:
     exit(2)
