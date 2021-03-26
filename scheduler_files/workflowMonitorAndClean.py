@@ -74,24 +74,60 @@ start=runLog['task_started']
 
 if (status=='EXECUTOR_ERROR'):
     sql="UPDATE run_history SET start='" + start +  "', stop=NOW(), status='Error' WHERE jobid='" + jobid + "'"
-if (status=='CANCELED'):
+elif (status=='CANCELED'):
     sql="UPDATE run_history SET start='" + start +  "', stop=NOW(), status='Canceled' WHERE jobid='" + jobid + "'"
-
-
-if (status=='COMPLETE'):
+elif (status=='COMPLETE'):
     stop=runLog['task_finished']
     ram=0.0;
     cpu=0.0
     taskIds={}
     i=1
     taskSteps={}
+
+    #for each task collect its info
+    #clean up tesk jobs after keeping their logs
+    for log in taskLogs:
+        resources=log['resources']
+        cpu+=float(resources['cpu_cores'])
+        ram+=float(resources['ram_gb'])
+        taskIds[log['id']]=log['name']
+        taskSteps[i]=log['id']
+        i+=1
     
-    # for key in body:
-    #   print(key)
-    #   print(body[key])
-    #   print('\n\n')
+    ram/=len(taskLogs);
+    cpu/=len(taskLogs);
+    sql="UPDATE run_history SET start='" + start +  "', stop='" + stop + "', status='Complete', ram=" + str(ram) + ",cpu=" + str(cpu) +  "WHERE jobid='" + jobid + "'"
+else:
+    sql="UPDATE run_history SET status='%s' WHERE jobid='%s'" % (status, jobid)
+
+conn=psg.connect(host=host, user=dbuser, password=passwd, dbname=dbname)
+cur=conn.cursor()
+cur.execute(sql)
+conn.commit()
+conn.close()
+
+
+if (status=='COMPLETE' or status=='EXECUTOR_ERROR'):
+    logfile=logPath + '/' + 'logs.txt'
+    g=open(logfile,'w')
     
-    
+    g.write('>>STDERR\n')
+    try:
+        g.write(body['run_log']['stderr']+ '\n')
+    except KeyError as kerr:
+        g.write("NO LOG\n")
+
+    g.write('>>STDOUT\n')
+    try:
+        g.write(body['run_log']['stdout'] + '\n')
+    except KeyError as kerr:
+        g.write("NO LOG\n")
+
+    g.close()
+
+
+if (status=='COMPLETE'):
+    #write logs
 
     #retrieve workflow outputs
     for output in outputs:
@@ -119,73 +155,3 @@ if (status=='COMPLETE'):
                     with open(localpath, 'wb') as f:
                         shutil.copyfileobj(r, f)
 
-
-    #for each task collect its info
-    #clean up tesk jobs after keeping their logs
-    for log in taskLogs:
-        resources=log['resources']
-        cpu+=float(resources['cpu_cores'])
-        ram+=float(resources['ram_gb'])
-        taskIds[log['id']]=log['name']
-        taskSteps[i]=log['id']
-        i+=1
-    
-    ram/=len(taskLogs);
-    cpu/=len(taskLogs);
-    kube_command='kubectl get pods -n tesk --no-headers | tr -s " "'
-    try:
-        out=subprocess.check_output(kube_command,stderr=subprocess.STDOUT, shell=True)
-    except subprocess.CalledProcessError as exc:
-        print(exc.output)
-        exit(2)
-
-    out=out.decode().split('\n')
-    podLogs={}
-    for line in out:
-        pod=line.split(' ')
-        if len(pod)==0:
-            continue
-        pod=pod[0].strip()
-
-        if '-ex-' not in pod:
-            continue
-
-        podTokens=pod.split('-')
-        task=podTokens[0] + '-' + podTokens[1]
-        
-        if task not in taskIds:
-            continue
-
-        kube_command='kubectl -n tesk logs ' + pod
-        # print(kube_command)
-        try:
-            logs=subprocess.check_output(kube_command,stderr=subprocess.STDOUT, shell=True)
-        except subprocess.CalledProcessError as exc:
-            print(exc.output)
-            exit(3)
-        podLogs[task]=logs.decode()
-
-        subtasks=[task, task+'-ex-00', task + '-outputs-filer', task + '-inputs-filer']
-        for subtask in subtasks:
-            kube_command='kubectl -n tesk delete job ' + subtask
-            try:
-                logs=subprocess.check_output(kube_command,stderr=subprocess.STDOUT, shell=True)
-            except subprocess.CalledProcessError as exc:
-                print(exc.output)
-                exit(4)
-    #write logs
-    logfile=logPath + '/' + 'logs.txt'
-    g=open(logfile,'w')    
-    for i in range(1,len(taskSteps)):
-        g.write('>>Step ' + str(i) + ': ' + taskIds[taskSteps[i]] + ' logs\n')
-        g.write('------------------------\n')
-        g.write(podLogs[taskSteps[i]] + '\n')
-    g.close()
-
-    sql="UPDATE run_history SET start='" + start +  "', stop='" + stop + "', status='Complete', ram=" + str(ram) + ",cpu=" + str(cpu) +  "WHERE jobid='" + jobid + "'"
-
-conn=psg.connect(host=host, user=dbuser, password=passwd, dbname=dbname)
-cur=conn.cursor()
-cur.execute(sql)
-conn.commit()
-conn.close()
