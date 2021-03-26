@@ -70,13 +70,19 @@ if workflowExtension not in workAllowedExt:
         if (len(filenameTokens)>1):
             secondExtension=filenameTokens[1]
             if secondExtension=='tar':
-                subprocess.call(['tar','xzf',workflowPath, '-C', folder])
+                returncode=subprocess.call(['tar','xzf',workflowPath, '-C', folder])
             else:
-                subprocess.call(['gzip','-d','-k','-f', workflowPath])
+                returncode=subprocess.call(['gzip','-d','-k','-f', workflowPath])
         else:
-            subprocess.call(['gzip','-d','-k','-f', workflowPath])
+            returncode=subprocess.call(['gzip','-d','-k','-f', workflowPath])
     elif workflowExtension=='tar':
-        subprocess.call(['tar','xvf',workflowPath, '-C', folder])
+        returncode=subprocess.call(['tar','xf',workflowPath, '-C', folder])
+    else:
+        print("ERROR: No valid extension found: %s" % workflowExtension)
+        returncode=1
+
+    if returncode!=0:
+        exit(returncode)
 
     # print(folder)
     workFile,retCode,content=wuf.getMainWorkflowFile(folder,workAllowedExt)
