@@ -125,7 +125,7 @@ class WorkflowController extends Controller
         
         if (!is_dir($userFolder))
         {
-            exec("mkdir $userFolder");
+            exec("mkdir -p $userFolder");
             exec("chmod 777 $userFolder");
         }
 
@@ -1375,7 +1375,7 @@ class WorkflowController extends Controller
 
                 if (!is_dir($userFolder))
                 {
-                    exec("mkdir $userFolder");
+                    exec("mkdir -p $userFolder");
                     exec("chmod 777 $userFolder");
                 }
 

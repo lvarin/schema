@@ -101,7 +101,7 @@ class DownloadDataset extends \yii\db\ActiveRecord
             $finalFolder=Yii::$app->params['userDataPath'] . '/' . explode('@',Userw::getCurrentUser()['username'])[0] . '/' . $folder . '/'. "Helix_Dataset_" . $dataset_id . '/';
             
 
-            exec("mkdir $finalFolder");
+            exec("mkdir -p $finalFolder");
 
             session_write_close();
             foreach ($resources as $res)
@@ -165,7 +165,7 @@ class DownloadDataset extends \yii\db\ActiveRecord
             
             if(!is_dir($finalFolder))
             {
-                exec("mkdir $finalFolder");
+                exec("mkdir -p $finalFolder");
             }
             
             session_write_close();
@@ -211,7 +211,7 @@ class DownloadDataset extends \yii\db\ActiveRecord
         
         if(!file_exists($finalFolder))
         {
-            exec("mkdir $finalFolder");
+            exec("mkdir -p $finalFolder");
         }
 
         session_write_close();

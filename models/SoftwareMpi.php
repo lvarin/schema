@@ -173,11 +173,11 @@ class SoftwareMpi extends \yii\db\ActiveRecord
         if (file_exists($folder))
         {
             exec("rm -r $folder", $out, $ret);
-            exec("mkdir $folder", $out, $ret);
+            exec("mkdir -p $folder", $out, $ret);
         }
         else
         {
-            exec("mkdir $folder", $out, $ret);
+            exec("mkdir -p $folder", $out, $ret);
         }
         
         /*

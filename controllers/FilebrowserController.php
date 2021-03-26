@@ -128,7 +128,7 @@ class FilebrowserController extends Controller
        
         if (!is_dir($userFolder))
         {
-            exec("mkdir $userFolder");
+            exec("mkdir -p $userFolder");
         }
 
         exec("chmod 777 $userFolder -R 2>&1",$out,$ret);
