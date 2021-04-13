@@ -1,117 +1,40 @@
-# Start with official yii2 image because it contains all dependencies
+FROM centos:7
 
-FROM yiisoftware/yii2-php:7.4-apache
+WORKDIR /data/www/schema
 
-# Install required packages
+# https://github.com/athenarc/schema
+RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+  curl -LO "https://dl.k8s.io/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl.sha256" && \
+  echo "$(<kubectl.sha256) kubectl" | sha256sum --check && \
+  install -D -m 774 kubectl /usr/local/bin/ && \
+  rm kubectl.sha256 kubectl
 
-RUN apt update && apt install -y libyaml-dev \
-    python3-ruamel.yaml \
-    python3-psycopg2 \
-    python3-yaml \
-    python3-requests \
-    python3-sklearn \
-    python3-pip \
-    apache2 \
-    cwltool \
-    git \
-    zip \
-    unzip \
-    libxml2-dev \
-    ftp sudo \
-    lsb-release \
-    postgresql-client
+RUN yum install -y epel-release && \
+    yum install -y http://rpms.remirepo.net/enterprise/remi-release-7.rpm && \
+    yum update -y && \
+    yum -y install python2 python2-pip python3-pip libpq-devel \
+      php72 php72-php-mbstring php72-php-xml php72-php-gd php72-php-pgsql php72-php-json php72-php-pecl-yaml \
+      zip unzip gcc python3-devel git graphviz && \
+    ln -s /usr/bin/php72 /usr/bin/php
 
-# Install python-yaml
+RUN pip2 install ruamel.yaml psycopg2-binary pyyaml requests && pip3 install rocrate cwltool psycopg2-binary
 
-RUN pecl install yaml
-RUN docker-php-ext-enable yaml.so
+RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
-# Install RO-crates using pip3
-RUN pip3 install rocrate
+RUN composer create-project --prefer-dist --stability=dev yiisoft/yii2-app-basic /data/www/schema && cd /data/www/schema && \
+    composer require 2amigos/yii2-ckeditor-widget && \
+    composer require webvimark/module-user-management && \
+    composer require kartik-v/yii2-widget-datepicker "dev-master" && \
+    composer require --prefer-dist yiisoft/yii2-bootstrap4 && \
+    composer require --prefer-dist yiisoft/yii2-httpclient && \
+    composer require alexantr/yii2-elfinder
 
-# Install docker-tar-pusher using pip3
-RUN pip3 install dockertarpusher
+# Schema uses 'sudo', this is a workarround to make it work. A more proper solution should be devised
 
-# Install kubectl
-RUN apt update && apt install -y apt-transport-https ca-certificates curl
+#RUN useradd schema && yum install -y sudo nss_wrapper
+#COPY entrypoint.sh /
+COPY sudo /usr/local/bin
 
-RUN curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+COPY . /data/www/schema
 
-RUN echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | tee /etc/apt/sources.list.d/kubernetes.list
-
-RUN apt update && apt install -y kubectl
-
-# Create the web server folder and navigate to it
-RUN mkdir /app/web
-
-WORKDIR /app/web
-
-# Update composer to version 2 because the image contains version 1
-RUN composer self-update --2
-
-# Install yii2
-RUN composer create-project --prefer-dist yiisoft/yii2-app-basic schema
-
-# Clone the schema repo and merge files to the app created in the previous tep
-RUN git clone https://github.com/athenarc/schema.git schema_repo
-
-COPY . /app/web/schema/
-
-RUN rm -rf schema_repo
-
-WORKDIR /app/web/schema
-
-# Change the composer minimum stability setting
-RUN sed -i "s|\"minimum-stability\": \"stable\"|\"minimum-stability\": \"dev\" |g" composer.json
-
-# Change the default location for apache
-RUN sed -i "s|DocumentRoot /app/web|DocumentRoot /app/web/schema/web |g" /etc/apache2/sites-available/000-default.conf
-
-# Increase php post/file upload limit and restart apache
-RUN sed -i "s|upload_max_filesize = 2M|upload_max_filesize = 50G |g" /usr/local/etc/php/php.ini-production
-
-RUN sed -i "s|post_max_size = 8M|post_max_size = 50G |g" /usr/local/etc/php/php.ini-production
-
-RUN sed -i "s|display_errors = Off|display_errors = On |g" /usr/local/etc/php/php.ini-production
-
-RUN cp /usr/local/etc/php/php.ini-production /usr/local/etc/php/php.ini
-
-# Since OpenShift annot listen to <1024, we'll use port 8080 (thanks Alvaro Gonzales!)
-RUN sed -i "s|Listen 80|Listen 8080|" /etc/apache2/ports.conf
-RUN sed -i "s|<VirtualHost \*:80>|<VirtualHost *:8080>|" /etc/apache2/sites-available/000-default.conf
-
-RUN service apache2 restart
-
-# Install required yii2 plugins
-RUN composer require webvimark/module-user-management
-
-RUN composer require kartik-v/yii2-widget-datepicker "dev-master"
-
-RUN composer require --prefer-dist yiisoft/yii2-bootstrap4
-
-RUN composer require --prefer-dist yiisoft/yii2-httpclient
-
-RUN composer require alexantr/yii2-elfinder
-
-RUN composer require 2amigos/yii2-ckeditor-widget
-
-# # Install docker
-# RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-
-# RUN echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-# RUN cat /etc/apt/sources.list.d/docker.list
-
-# RUN apt update && apt install -y docker-ce docker-ce-cli containerd.io
-
-# Give apache permission to run python scripts
-COPY schema_access_file /etc/sudoers.d/
-
-# Add the inistialization script on the image
-RUN mkdir /init
-
-COPY ./config-init.sh /init/
-
-#start apache2
-CMD ["/bin/bash", "/init/config-init.sh"]
-
+ENTRYPOINT ["php", "/data/www/schema/yii", "serve", "0.0.0.0:8080"]

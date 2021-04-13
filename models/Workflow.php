@@ -115,12 +115,12 @@ class Workflow extends \yii\db\ActiveRecord
             {
                 if ($field->field_type=='File')
                 {
-                    $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $field->value];
+                    $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $field->value];
                     $params[$field->name]=$value;
                 }
                 else if ($field->field_type=='Directory')
                 {
-                    $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $field->value];
+                    $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $field->value];
                     $params[$field->name]=$value;
                 }
                 else if ($field->field_type=='boolean')
@@ -144,7 +144,7 @@ class Workflow extends \yii\db\ActiveRecord
                     $finalArray=[];
                     foreach ($tmpArray as $val)
                     {
-                        $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $val];
+                        $value=['class'=>$field->field_type, 'path'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $val];
                         $finalArray[]=$value;
                     }
                     
@@ -155,7 +155,7 @@ class Workflow extends \yii\db\ActiveRecord
                     $finalArray=[];
                     foreach ($tmpArray as $val)
                     {
-                        $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['ftpIp'] . $userFolder . '/' . $val];
+                        $value=['class'=>$field->field_type, 'location'=> "ftp://" . Yii::$app->params['StorageIp'] . $userFolder . '/' . $val];
                         $finalArray[]=$value;
                     }
                     
@@ -290,8 +290,18 @@ class Workflow extends \yii\db\ActiveRecord
         $dataFolder=Yii::$app->params['tmpWorkflowPath'] . '/' . str_replace(' ','-',$workflow->name) . '/' . str_replace(' ','-',$workflow->version) . '/';
         $nid=uniqid();
         $tmpFolder=Yii::$app->params['tmpWorkflowPath'] . 'tmp-workflows/' . $nid ;
+
+        exec('mkdir -p ' . Yii::$app->params['tmpWorkflowPath'] . 'tmp-workflows/', $out, $ret);
+        ini_set("error_log", "/dev/stderr");
+        if ( $ret != 0) {
+            error_log($ret." ".implode($out));
+        }
+
         $command="cp -r $dataFolder $tmpFolder";
         exec($command, $out, $ret);
+        if ( $ret != 0) {
+            error_log($ret." ".implode($out));
+        }
 
         /*
          * Return all files in a list
@@ -590,8 +600,7 @@ class Workflow extends \yii\db\ActiveRecord
         $monitorCommand=implode(' ',$arguments);
         // print_r($monitorCommand);
         // exit(0);
-        shell_exec(sprintf('%s > /dev/null 2>&1 &', $monitorCommand));
-
+        shell_exec(sprintf('%s >%s 2>&1 &', $monitorCommand, $tmpFolder."/shell_exec.log"));
 
 
         return ['jobid'=>$jobid,'error'=>''];

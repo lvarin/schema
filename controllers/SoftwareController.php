@@ -124,7 +124,7 @@ class SoftwareController extends Controller
 
         if (!is_dir($userFolder))
         {
-            exec("mkdir $userFolder");
+            exec("mkdir -p $userFolder");
             exec("chmod 777 $userFolder");
         }
 
@@ -562,7 +562,7 @@ class SoftwareController extends Controller
 
         if (!is_dir($userFolder))
         {
-            exec("mkdir $userFolder");
+            exec("mkdir -p $userFolder");
             exec("chmod 777 $userFolder");
         }
         $runError='';

@@ -10,7 +10,7 @@ return [
     'tmpWorkflowPath' => 'directory where user-uploaded workflow files are temporarily stored',
     'systemUser' => 'user that with python and kubectl access',
     'nfsIp' => 'IP of the local NFS exposing dire',
-    'ftpIp' => 'IP of the FTP service exposing the files of the users',
+    'StorageIp' => 'IP of the FTP service exposing the files of the users',
     'scriptsFolder' => 'directory where the scheduler_files are located <project-root/scheduler_files>',
     'workflowsFolder' => 'directory where uploaded workflows are permanently stored',
     'archivedWorkflowsFolder' => 'directory in which deleted workflows are archived',

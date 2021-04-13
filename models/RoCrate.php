@@ -100,7 +100,7 @@ class RoCrate extends \yii\db\ActiveRecord
 
         if (!is_dir($ROCratesFolder))
         {
-            exec("mkdir $ROCratesFolder");
+            exec("mkdir -p $ROCratesFolder");
         }
         exec("chmod 777 $ROCratesFolder -R 2>&1",$out,$ret);
 
@@ -193,7 +193,7 @@ class RoCrate extends \yii\db\ActiveRecord
 
         if (!is_dir($ROCratesFolder))
         {
-            exec("mkdir $ROCratesFolder");
+            exec("mkdir -p $ROCratesFolder");
         }
         exec("chmod 777 $ROCratesFolder -R 2>&1",$out,$ret);
 

@@ -83,7 +83,7 @@ def getMainWorkflowFile(folder,allowed):
     # If no main workflow file was found, return an error code.
     if found==False:
         return False,14,{}
-    print('Main file: ' + mainFile)
+    print('Main file: %s ' % mainFile)
     return (mainFile,0,mainContent)
 
 
@@ -389,16 +389,20 @@ def workflowStore(name,version,location,user,visibility,
     sql2='INSERT INTO workflow (name,version,location,uploaded_by,\
             visibility, description,biotools,dois,github_link,covid19,original_file,instructions) '
     sql2+='VALUES (' + ','.join(values) + ')'
-    
-    # print()
-    # print(sql2)
-    conn=psg.connect(host=host, user=dbuser, password=passwd, dbname=dbname)
-    cur=conn.cursor()
-    cur.execute(sql1)
-    cur.execute(sql2)
-    conn.commit()
-    conn.close()
 
+    try:
+        conn=psg.connect(host=host, user=dbuser, password=passwd, dbname=dbname)
+        cur=conn.cursor()
+        cur.execute(sql1)
+        cur.execute(sql2)
+        conn.commit()
+        conn.close()
+    except Exception as error: # Should not use a catch all exception.
+        print ("Oops! An exception has occured:", error)
+        print ("Exception TYPE:", type(error))
+        return 111
+
+    return 0
 
 def quoteEnclose(string):
     return "'" + string + "'"

@@ -70,12 +70,19 @@ if workflowExtension not in workAllowedExt:
         if (len(filenameTokens)>1):
             secondExtension=filenameTokens[1]
             if secondExtension=='tar':
-                subprocess.call(['tar','xzf',workflowPath, '-C', folder])
+                returncode=subprocess.call(['tar','xzf',workflowPath, '-C', folder])
             else:
-                subprocess.call(['gzip','-d','-k','-f', workflowPath])
+                returncode=subprocess.call(['gzip','-d','-k','-f', workflowPath])
         else:
-            subprocess.call(['gzip','-d','-k','-f', workflowPath])
-        
+            returncode=subprocess.call(['gzip','-d','-k','-f', workflowPath])
+    elif workflowExtension=='tar':
+        returncode=subprocess.call(['tar','xf',workflowPath, '-C', folder])
+    else:
+        print("ERROR: No valid extension found: %s" % workflowExtension)
+        returncode=1
+
+    if returncode!=0:
+        exit(returncode)
 
     # print(folder)
     workFile,retCode,content=wuf.getMainWorkflowFile(folder,workAllowedExt)
@@ -89,8 +96,13 @@ else:
 print('Workfile: ' + workFile)
 # workFile=workFile.replace(containerMount['local'],containerMount['wesContainer'])
 
-wuf.workflowStore(workName,workVersion,workFile,user,visibility,
+retCode=wuf.workflowStore(workName,workVersion,workFile,user,visibility,
                 description,biotools,doiFile,github_link,covid19,workflowPath,instructions)
+
+
+if retCode != 0:
+    print("ERROR: While updating the DB")
+    exit(retCode)
 
 if 'inputs' not in content:
     exit(2)
